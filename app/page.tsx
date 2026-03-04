@@ -1085,7 +1085,7 @@ export default function Page() {
                   style={{ transform: `translate(${flowOffset.x}px, ${flowOffset.y}px) scale(${flowScale})` }}
                 >
                   <img
-                    src={flowType === 'user' ? '/flowcharts/user-role-swimlane.svg' : '/flowcharts/agent-swimlane.svg'}
+                    src={flowType === 'user' ? '/flowcharts/user-role-swimlane-2026-03-04-042435.svg' : '/flowcharts/agent-swimlane.svg'}
                     alt={flowType === 'user' ? '纯用户角色泳道图' : '含AI Agent泳道图'}
                     draggable={false}
                   />
