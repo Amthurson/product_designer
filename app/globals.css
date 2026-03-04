@@ -799,6 +799,101 @@ textarea::placeholder {
 }
 .dialog-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .dialog-actions { display: flex; gap: 8px; }
+.flow-dialog {
+  width: min(1400px, 96vw);
+  height: min(88vh, 980px);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 12px;
+}
+.flow-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.flow-head h3 {
+  margin: 0;
+}
+.flow-head p {
+  margin: 4px 0 0;
+  color: #6a79a7;
+}
+.flow-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.flow-tabs button {
+  border: 1px solid #cad6ff;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #405fcd;
+}
+.flow-tabs button.active {
+  background: #dce4ff;
+  border-color: #b8c9ff;
+  color: #2f52c6;
+  font-weight: 700;
+}
+.flow-body {
+  margin-top: 10px;
+  border: 1px solid #dbe2f7;
+  border-radius: 12px;
+  background: #f7f9ff;
+  overflow: auto;
+  padding: 10px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+}
+.flow-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px dashed #cfd9fb;
+  background: #fff;
+  min-height: 320px;
+  cursor: grab;
+}
+.flow-viewport.dragging {
+  cursor: grabbing;
+}
+.flow-pan-layer {
+  transform-origin: 0 0;
+  will-change: transform;
+  user-select: none;
+}
+.flow-pan-layer img {
+  display: block;
+  min-width: 980px;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+.flow-zoom-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.flow-zoom-tools button {
+  border: 1px solid #cbd6ff;
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #3f5ecb;
+  cursor: pointer;
+}
+.flow-zoom-tools span {
+  min-width: 54px;
+  text-align: center;
+  color: #4d6096;
+  font-weight: 700;
+  font-size: 13px;
+}
 .note-dialog {
   width: min(680px, 94vw);
 }
@@ -991,6 +1086,8 @@ button.ghost,
   }
   .phone { border-radius: 24px; }
   .grid { grid-template-columns: 1fr; }
+  .flow-dialog { width: 96vw; height: 86vh; }
+  .flow-tabs { width: 100%; }
   .detail-dialog { width: min(96vw, 760px); border-radius: 18px; padding: 12px; }
   .detail-title { font-size: 30px; }
   .detail-subtitle { font-size: 22px; }

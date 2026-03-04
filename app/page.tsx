@@ -49,6 +49,13 @@ export default function Page() {
   const [detailCollapsed, setDetailCollapsed] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [actionDialog, setActionDialog] = useState<ActionDialog>(null);
+  const [flowOpen, setFlowOpen] = useState(false);
+  const [flowType, setFlowType] = useState<'user' | 'agent'>('user');
+  const [flowScale, setFlowScale] = useState(1);
+  const [flowOffset, setFlowOffset] = useState({ x: 0, y: 0 });
+  const [flowDragging, setFlowDragging] = useState(false);
+  const flowViewportRef = useRef<HTMLDivElement | null>(null);
+  const flowDragRef = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteKey, setNoteKey] = useState('HOME');
   const [noteDraft, setNoteDraft] = useState('');
@@ -73,6 +80,14 @@ export default function Page() {
     observer.observe(el);
     return () => observer.disconnect();
   }, [previewDevice]);
+
+  useEffect(() => {
+    if (!flowOpen) return;
+    setFlowScale(1);
+    setFlowOffset({ x: 0, y: 0 });
+    setFlowDragging(false);
+    flowDragRef.current.dragging = false;
+  }, [flowOpen, flowType]);
 
   useEffect(() => {
     try {
@@ -131,6 +146,13 @@ export default function Page() {
   const noteLabel = (key: string) => {
     if (key === 'HOME') return '首页工作台';
     return nodes[key] ? `${key} · ${nodes[key].title}` : key;
+  };
+
+  const clampFlowScale = (v: number) => Math.min(3, Math.max(0.4, Number(v.toFixed(3))));
+  const updateFlowScale = (next: number) => setFlowScale((prev) => clampFlowScale(typeof next === 'number' ? next : prev));
+  const resetFlowView = () => {
+    setFlowScale(1);
+    setFlowOffset({ x: 0, y: 0 });
   };
 
   const openNoteModal = (key?: string) => {
@@ -854,6 +876,7 @@ export default function Page() {
             </button>
           </div>
           {previewDevice !== 'pc' && <button {...bind('打开/关闭节点面板', 'click -> panel_toggle')} onClick={() => setPanelOpen((v) => !v)}>节点面板</button>}
+          <button {...bind('打开流程图弹窗', 'click -> flow_open')} onClick={() => setFlowOpen(true)}>流程图</button>
           <button {...bind('打开备注弹窗（可按节点保存）', 'click -> note_open')} onClick={() => openNoteModal()}>备注</button>
           <button {...bind('打开节点说明弹窗', 'click -> detail_open')} onClick={() => { setDetailCollapsed(false); setDetailOpen(true); }}>节点说明</button>
         </div>
@@ -990,6 +1013,91 @@ export default function Page() {
                 </section>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {flowOpen && (
+        <div className="overlay" onClick={() => setFlowOpen(false)}>
+          <div className="dialog flow-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="flow-head">
+              <div>
+                <h3>流程图预览</h3>
+                <p>{flowType === 'user' ? '纯用户角色泳道图' : '含 AI Agent 泳道图'}</p>
+              </div>
+              <div className="flow-tabs">
+                <button className={flowType === 'user' ? 'active' : ''} onClick={() => setFlowType('user')}>纯用户角色</button>
+                <button className={flowType === 'agent' ? 'active' : ''} onClick={() => setFlowType('agent')}>含AI Agent</button>
+                <button onClick={() => setFlowOpen(false)}>关闭</button>
+              </div>
+            </div>
+            <div className="flow-body">
+              <div
+                ref={flowViewportRef}
+                className={`flow-viewport ${flowDragging ? 'dragging' : ''}`}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  const viewport = flowViewportRef.current;
+                  if (!viewport) return;
+                  const rect = viewport.getBoundingClientRect();
+                  const mouseX = e.clientX - rect.left;
+                  const mouseY = e.clientY - rect.top;
+                  const nextScale = clampFlowScale(flowScale * (e.deltaY > 0 ? 0.9 : 1.1));
+                  if (nextScale === flowScale) return;
+                  const contentX = (mouseX - flowOffset.x) / flowScale;
+                  const contentY = (mouseY - flowOffset.y) / flowScale;
+                  const nextOffsetX = mouseX - contentX * nextScale;
+                  const nextOffsetY = mouseY - contentY * nextScale;
+                  setFlowScale(nextScale);
+                  setFlowOffset({ x: nextOffsetX, y: nextOffsetY });
+                }}
+                onMouseDown={(e) => {
+                  if (e.button !== 0) return;
+                  flowDragRef.current = {
+                    dragging: true,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    originX: flowOffset.x,
+                    originY: flowOffset.y
+                  };
+                  setFlowDragging(true);
+                }}
+                onMouseMove={(e) => {
+                  if (!flowDragRef.current.dragging) return;
+                  const dx = e.clientX - flowDragRef.current.startX;
+                  const dy = e.clientY - flowDragRef.current.startY;
+                  setFlowOffset({
+                    x: flowDragRef.current.originX + dx,
+                    y: flowDragRef.current.originY + dy
+                  });
+                }}
+                onMouseUp={() => {
+                  flowDragRef.current.dragging = false;
+                  setFlowDragging(false);
+                }}
+                onMouseLeave={() => {
+                  flowDragRef.current.dragging = false;
+                  setFlowDragging(false);
+                }}
+              >
+                <div
+                  className="flow-pan-layer"
+                  style={{ transform: `translate(${flowOffset.x}px, ${flowOffset.y}px) scale(${flowScale})` }}
+                >
+                  <img
+                    src={flowType === 'user' ? '/flowcharts/user-role-swimlane.svg' : '/flowcharts/agent-swimlane.svg'}
+                    alt={flowType === 'user' ? '纯用户角色泳道图' : '含AI Agent泳道图'}
+                    draggable={false}
+                  />
+                </div>
+              </div>
+              <div className="flow-zoom-tools">
+                <button onClick={() => updateFlowScale(flowScale - 0.1)}>-</button>
+                <span>{Math.round(flowScale * 100)}%</span>
+                <button onClick={() => updateFlowScale(flowScale + 0.1)}>+</button>
+                <button onClick={resetFlowView}>重置</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
